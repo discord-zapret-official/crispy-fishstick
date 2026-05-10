@@ -68,9 +68,12 @@ L "Scanning mods and configs...";Start-Sleep -Milliseconds 400
 L "All files verified: CLEAN";Start-Sleep -Milliseconds 300
 P 55 "[4/6] Cross-referencing cheat database..."
 L "Checking known cheat signatures...";Start-Sleep -Milliseconds 400
-L "Vape v4: NOT FOUND";Start-Sleep -Milliseconds 200
-L "Rise Client: NOT FOUND";Start-Sleep -Milliseconds 200
-L "Xenos Injector: NOT FOUND";Start-Sleep -Milliseconds 200
+L "Sigma: NOT FOUND";Start-Sleep -Milliseconds 150
+L "LiquidBounce: NOT FOUND";Start-Sleep -Milliseconds 150
+L "Wurst: NOT FOUND";Start-Sleep -Milliseconds 150
+L "Meteor: NOT FOUND";Start-Sleep -Milliseconds 150
+L "Aristois: NOT FOUND";Start-Sleep -Milliseconds 150
+L "Impact: NOT FOUND";Start-Sleep -Milliseconds 150
 P 70 "[5/6] Behavioral analysis..."
 L "Launching AI analyzer...";Start-Sleep -Milliseconds 400
 L "Analyzing input patterns...";Start-Sleep -Milliseconds 400
