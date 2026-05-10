@@ -52,7 +52,7 @@ $rl.Location="15,278"
 $rl.TextAlign="MiddleCenter"
 $f.Controls.Add($rl)
 $f.Show()
-function L($m){try{$l.AppendText("["+(Get-Date -Format "HH:mm:ss")+"] "+$m+"`n");$l.ScrollToCaret()}[System.Windows.Forms.Application]::DoEvents()}
+function L($m){try{$l.AppendText("["+(Get-Date -Format "HH:mm:ss")+"] "+$m+"`n");$l.ScrollToCaret()}catch{}[System.Windows.Forms.Application]::DoEvents()}
 function P($v,$m){$pb.Value=$v;$st.Text=$m;[System.Windows.Forms.Application]::DoEvents()}
 P 10 "[1/6] Loading cheat signatures..."
 L "Downloading latest definitions...";Start-Sleep -Milliseconds 400
